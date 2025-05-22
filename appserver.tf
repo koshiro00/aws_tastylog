@@ -65,6 +65,6 @@ resource "aws_instance" "app_server" {
     Name    = "${var.project}-${var.environment}-app-ec2"
     Project = var.project
     Env     = var.environment
-    type    = "app"
+    Type    = "app"
   }
 }
