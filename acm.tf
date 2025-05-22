@@ -48,3 +48,25 @@ resource "aws_acm_certificate_validation" "cert_valid" {
   ]
 }
 
+
+# for virginia region
+resource "aws_acm_certificate" "virginia_cert" {
+  provider = aws.virginia
+
+  domain_name       = "*.${var.domain}"
+  validation_method = "DNS"
+
+  tags = {
+    Name    = "${var.project}-${var.environment}-wildcard-sslcert"
+    Project = var.project
+    Env     = var.environment
+  }
+
+  lifecycle {
+    create_before_destroy = true # 証明書の更新時、古い証明書を削除する前に新しい証明書を作成する
+  }
+
+  depends_on = [
+    aws_route53_zone.route53_zone, # Route53を作成後に証明書を作成する
+  ]
+}
