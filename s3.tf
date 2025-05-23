@@ -23,21 +23,11 @@ resource "aws_s3_bucket_versioning" "s3_static_bucket_versioning" {
 resource "aws_s3_bucket_public_access_block" "s3_static_bucket" {
   bucket = aws_s3_bucket.s3_static_bucket.id
 
-  # 新しいパブリックACL（Access Control List）の設定を禁止
-  # バケット作成後に「public-read」などのパブリックACLを追加できなくする
-  block_public_acls = true
-
-  # 新しいパブリックバケットポリシーの設定を許可
-  # 静的サイトホスティングで必要なパブリックアクセスポリシーを設定可能にする
-  block_public_policy = false
-
-  # 既存のパブリックACLを無視して効果を無効化
-  # 過去に設定されたパブリックACLがあっても実際のアクセス権限に影響しないようにする
-  ignore_public_acls = true
-
-  # パブリックバケットポリシーによるクロスアカウントアクセスを許可
-  # CloudFrontのOAC（Origin Access Control）からのアクセスを可能にする
-  restrict_public_buckets = false
+  # 完全にパブリックアクセスを禁止
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_policy" "s3_static_bucket_policy" {
@@ -56,8 +46,8 @@ data "aws_iam_policy_document" "s3_static_bucket" {
     resources = ["${aws_s3_bucket.s3_static_bucket.arn}/*"]
     # 全ての人を許可
     principals {
-      type        = "*"
-      identifiers = ["*"]
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.cf_s3_origin_access_identity.iam_arn]
     }
   }
 }
