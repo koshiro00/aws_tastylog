@@ -48,23 +48,62 @@ resource "aws_ssm_parameter" "password" {
 # ----------------------
 # EC2 Instance
 # ----------------------
-resource "aws_instance" "app_server" {
-  ami                         = data.aws_ami.app.id
-  instance_type               = "t2.micro"
-  subnet_id                   = aws_subnet.public-subnet-1a.id
-  associate_public_ip_address = true
-  iam_instance_profile        = aws_iam_instance_profile.app_ec2_profile.name
+# resource "aws_instance" "app_server" {
+#   ami                         = data.aws_ami.app.id
+#   instance_type               = "t2.micro"
+#   subnet_id                   = aws_subnet.public-subnet-1a.id
+#   associate_public_ip_address = true
+#   iam_instance_profile        = aws_iam_instance_profile.app_ec2_profile.name
 
-  vpc_security_group_ids = [
-    aws_security_group.app_sg.id,
-    aws_security_group.opnmg_sg.id,
-  ]
+#   vpc_security_group_ids = [
+#     aws_security_group.app_sg.id,
+#     aws_security_group.opnmg_sg.id,
+#   ]
+#   key_name = aws_key_pair.keypair.key_name
+
+#   tags = {
+#     Name    = "${var.project}-${var.environment}-app-ec2"
+#     Project = var.project
+#     Env     = var.environment
+#     Type    = "app"
+#   }
+# }
+
+# ----------------------
+# Launch Template（起動テンプレート_Auto Scaling用）
+# ----------------------
+
+resource "aws_launch_template" "app_lt" {
+  update_default_version = true
+  name                   = "${var.project}-${var.environment}-app-lt"
+
+  image_id = data.aws_ami.app.id
   key_name = aws_key_pair.keypair.key_name
 
-  tags = {
-    Name    = "${var.project}-${var.environment}-app-ec2"
-    Project = var.project
-    Env     = var.environment
-    Type    = "app"
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name    = "${var.project}-${var.environment}-app-ec2"
+      Project = var.project
+      Env     = var.environment
+      Type    = "app"
+    }
   }
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups = [
+      aws_security_group.app_sg.id,
+      aws_security_group.opnmg_sg.id,
+    ]
+
+    delete_on_termination = true # EC2が消えた時にネットワークも消す
+  }
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.app_ec2_profile.name
+  }
+
+  user_data = filebase64("./src/initialize.sh") # EC2起動時に実行するスクリプト
+
 }

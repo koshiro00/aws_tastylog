@@ -9,16 +9,21 @@ data "aws_ami" "app" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-2023.7.20250512.0-kernel-6.1-x86_64"]
+    values = ["*tastylog-*-ami"]
   }
 
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
+  # filter {
+  #   name   = "name"
+  #   values = ["al2023-ami-2023.7.20250512.0-kernel-6.1-x86_64"]
+  # }
 
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+  # filter {
+  #   name   = "root-device-type"
+  #   values = ["ebs"]
+  # }
+
+  # filter {
+  #   name   = "virtualization-type"
+  #   values = ["hvm"]
+  # }
 }
