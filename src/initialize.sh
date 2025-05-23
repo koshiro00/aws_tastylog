@@ -30,6 +30,21 @@ tar -zxvf "${CWD}/${APP_NAME}-app-$(cat ./latest).tar.gz" -C "${CWD}/${APP_NAME}
 sudo rm -rf /opt/${APP_NAME}
 sudo mv ${CWD}/${APP_NAME} /opt/
 
+# Create environment variables file from Parameter Store
+echo "Creating environment variables file from Parameter Store..."
+sudo bash -c "cat > /etc/params << EOF
+MYSQL_HOST=\$(aws ssm get-parameter --name \"/tastylog/dev/app/MYSQL_HOST\" --query \"Parameter.Value\" --output text --region ap-northeast-1)
+MYSQL_PORT=\$(aws ssm get-parameter --name \"/tastylog/dev/app/MYSQL_PORT\" --query \"Parameter.Value\" --output text --region ap-northeast-1)
+MYSQL_DATABASE=\$(aws ssm get-parameter --name \"/tastylog/dev/app/MYSQL_DATABASE\" --query \"Parameter.Value\" --output text --region ap-northeast-1)
+MYSQL_USERNAME=\$(aws ssm get-parameter --name \"/tastylog/dev/app/MYSQL_USERNAME\" --with-decryption --query \"Parameter.Value\" --output text --region ap-northeast-1)
+MYSQL_PASSWORD=\$(aws ssm get-parameter --name \"/tastylog/dev/app/MYSQL_PASSWORD\" --with-decryption --query \"Parameter.Value\" --output text --region ap-northeast-1)
+EOF"
+
+# Reload systemd and enable service
+sudo systemctl daemon-reload
+
 # Boot application 
 sudo systemctl enable tastylog
 sudo systemctl start tastylog
+
+echo "Application startup completed."
