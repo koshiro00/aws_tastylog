@@ -46,7 +46,7 @@ resource "aws_ssm_parameter" "password" {
 }
 
 # ----------------------
-# EC2 Instance
+# EC2 Instance ← Launch Templateに置き換え
 # ----------------------
 # resource "aws_instance" "app_server" {
 #   ami                         = data.aws_ami.app.id
@@ -106,4 +106,37 @@ resource "aws_launch_template" "app_lt" {
 
   user_data = filebase64("./src/initialize.sh") # EC2起動時に実行するスクリプト
 
+}
+
+# ----------------------
+# Auto Scaling Group
+# ----------------------
+resource "aws_autoscaling_group" "app_asg" {
+  name = "${var.project}-${var.environment}-app-asg"
+
+  max_size         = 1 # 最大台数
+  min_size         = 1 # 最小台数
+  desired_capacity = 1 # 起動する台数
+
+  health_check_grace_period = 300 # ヘルスチェックを待つ時間
+  health_check_type         = "ELB"
+
+  vpc_zone_identifier = [
+    aws_subnet.public-subnet-1a.id,
+    aws_subnet.public-subnet-1c.id,
+  ]
+
+  target_group_arns = [aws_lb_target_group.alb_target_group.arn]
+
+  mixed_instances_policy {
+    launch_template {
+      launch_template_specification {
+        launch_template_id = aws_launch_template.app_lt.id
+        version            = "$Latest" # 最新バージョンを指定
+      }
+      override {
+        instance_type = "t2.micro" # インスタンスタイプを指定
+      }
+    }
+  }
 }
